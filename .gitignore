@@ -1,0 +1,12 @@
+# IntelliJ project files
+.idea
+
+# Python virtualenv
+.env
+
+# Local files
+_local
+
+# Temporary
+Dockerfile
+docker-compose.yml

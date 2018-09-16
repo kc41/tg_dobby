@@ -1,0 +1,5 @@
+aiohttp==3.4.4
+aiotg==0.9.9
+aioredis==1.1.0
+
+pydantic==0.13
