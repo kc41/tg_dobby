@@ -3,7 +3,7 @@ from typing import Optional
 from yargy import Parser, rule, and_, or_
 from yargy.interpretation import fact
 from yargy.interpretation.fact import Fact
-from yargy.predicates import dictionary, gte, lte
+from yargy.predicates import dictionary, gte, lte, normalized
 
 # WORDS
 
@@ -28,6 +28,13 @@ WORDS_HOUR_OF_A_DAY = {
     "полночь": "0",
 }
 
+WORDS_AM_PM = {
+    "день",
+    "ночь",
+    "утро",
+    "вечер",
+}
+
 WORDS_DAY_OF_WEEK_DISCRIMINATOR = {
     "эта",
     "следующая",
@@ -50,6 +57,8 @@ DAY_OF_WEEK = dictionary(WORDS_DAY_OF_WEEK)
 
 DAY_OF_WEEK_DISCRIMINATOR = dictionary(WORDS_DAY_OF_WEEK_DISCRIMINATOR)
 
+AM_PM = dictionary(WORDS_AM_PM)
+
 
 # Normalizers
 
@@ -61,7 +70,7 @@ def norm_hour_of_a_day(s: str):
 
 RelativeDayTimeFact = fact(
     "RelativeDayHour",
-    ["relative_day", "hour"]
+    ["relative_day", "hour", "am_pm"]
 )
 
 
@@ -72,7 +81,7 @@ class RelativeDayTimeFact(RelativeDayTimeFact):
 
 DayOfWeekTimeFact = fact(
     "DayOfWeekTimeFact",
-    ["discriminator", "day_of_week", "hour"]
+    ["discriminator", "day_of_week", "hour", "am_pm"]
 )
 
 
@@ -95,6 +104,12 @@ RULE_DAY_OF_WEEK_TIME = rule(
         rule("в").optional(),
         HOUR_OF_A_DAY.interpretation(
             DayOfWeekTimeFact.hour
+        ),
+
+        normalized("час").optional(),
+
+        AM_PM.optional().interpretation(
+            DayOfWeekTimeFact.am_pm.normalized()
         )
     ).optional()
 ).interpretation(
@@ -105,17 +120,28 @@ RULE_RELATIVE_DAY_TIME = rule(
     RELATIVE_DAY.interpretation(
         RelativeDayTimeFact.relative_day
     ),
-    rule("в").optional(),
-    HOUR_OF_A_DAY.interpretation(
-        RelativeDayTimeFact.hour
-    )
+    rule(
+        rule("в").optional(),
+
+        HOUR_OF_A_DAY.interpretation(
+            RelativeDayTimeFact.hour
+        ),
+
+        normalized("час").optional(),
+
+        AM_PM.optional().interpretation(
+            RelativeDayTimeFact.am_pm.normalized()
+        )
+    ).optional()
 ).interpretation(
     RelativeDayTimeFact
 )
 
 text = """
 завтра в полдень
-Послезавтра в 4
+завтра
+Послезавтра в 4 часа дня
+Послезавтра в 4 дня
 Через неделю
 Завтра в 4
 В эту пятницу в 4
