@@ -1,11 +1,11 @@
-from typing import Optional
-
+from typing import Optional, Union
 from yargy import Parser, rule, and_, or_
-from yargy.interpretation import fact
+from yargy.interpretation.attribute import Attribute
 from yargy.interpretation.fact import Fact
 from yargy.predicates import dictionary, gte, lte, normalized
 
 # WORDS
+from tg_notificator.grammar.yargy_utils import FactDefinition
 
 WORDS_RELATIVE_DAY = {
     "сегодня",
@@ -70,34 +70,19 @@ DAY_OF_WEEK_DISCRIMINATOR = dictionary(WORDS_DAY_OF_WEEK_DISCRIMINATOR)
 AM_PM = dictionary(WORDS_AM_PM)
 
 
-# Normalizers
-
-def norm_hour_of_a_day(s: str):
-    pass
-
-
 # Facts
 
-RelativeDayTimeFact = fact(
-    "RelativeDayHour",
-    ["relative_day", "hour", "am_pm"]
-)
+class RelativeDayTimeFact(FactDefinition):
+    relative_day: Union[str, Attribute]
+    hour: Union[str, Attribute]
+    am_pm: Union[str, Attribute]
 
 
-# noinspection PyRedeclaration
-class RelativeDayTimeFact(RelativeDayTimeFact):
-    pass
-
-
-DayOfWeekTimeFact = fact(
-    "DayOfWeekTimeFact",
-    ["discriminator", "day_of_week", "hour", "am_pm"]
-)
-
-
-# noinspection PyRedeclaration
-class DayOfWeekTimeFact(DayOfWeekTimeFact):
-    pass
+class DayOfWeekTimeFact(FactDefinition):
+    discriminator: Union[str, Attribute]
+    day_of_week: Union[str, Attribute]
+    hour: Union[str, Attribute]
+    am_pm: Union[str, Attribute]
 
 
 # RULES
