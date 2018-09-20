@@ -22,7 +22,7 @@ CASES = (
         RelativeDay(
             relative_day="послезавтра",
             day_time=DayTime(
-                hour="4",
+                hour=4,
                 am_pm="день",
             )
         )
@@ -32,7 +32,17 @@ CASES = (
         RelativeDay(
             relative_day="послезавтра",
             day_time=DayTime(
-                hour="4",
+                hour=4,
+                am_pm="день",
+            )
+        )
+    ),
+    (
+        "Послезавтра в две часа дня",
+        RelativeDay(
+            relative_day="послезавтра",
+            day_time=DayTime(
+                hour=2,
                 am_pm="день",
             )
         )
@@ -42,7 +52,7 @@ CASES = (
         RelativeDay(
             relative_day="послезавтра",
             day_time=DayTime(
-                hour="4",
+                hour=4,
                 am_pm="день",
             )
         )
@@ -52,7 +62,7 @@ CASES = (
         RelativeDay(
             relative_day="завтра",
             day_time=DayTime(
-                hour="4",
+                hour=4,
             )
         )
     ),
@@ -62,7 +72,7 @@ CASES = (
             discriminator="этот",
             day_of_week="пятница",
             day_time=DayTime(
-                hour="4",
+                hour=4,
                 minute=None,
                 am_pm=None
             )

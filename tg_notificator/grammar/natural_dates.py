@@ -24,18 +24,18 @@ WORDS_DAY_OF_WEEK = {
 }
 
 WORDS_HOUR_OF_A_DAY = {
-    "час": "1",
-    "два": "2",
-    "три": "3",
-    "четыре": "4",
-    "пять": "5",
-    "шесть": "6",
-    "семь": "7",
-    "восемь": "8",
-    "девять": "9",
-    "десять": "10",
-    "одинадцать": "11",
-    "двенадцать": "12",
+    "час": 1,
+    "два": 2,
+    "три": 3,
+    "четыре": 4,
+    "пять": 5,
+    "шесть": 6,
+    "семь": 7,
+    "восемь": 8,
+    "девять": 9,
+    "десять": 10,
+    "одинадцать": 11,
+    "двенадцать": 12,
 }
 
 WORDS_AM_PM = {
@@ -99,7 +99,7 @@ RULE_DAY_TIME = rule(
     rule("в").optional(),
 
     HOUR_OF_A_DAY.interpretation(
-        DayTime.hour.normalized()
+        DayTime.hour.normalized().custom(lambda val: int(WORDS_HOUR_OF_A_DAY.get(val, val)))
     ),
 
     normalized("час").optional(),
