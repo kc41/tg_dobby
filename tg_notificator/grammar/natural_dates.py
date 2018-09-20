@@ -53,6 +53,26 @@ WORDS_DAY_OF_WEEK_DISCRIMINATOR = {
 
 # Parts
 
+# TODO FIX: find adequate way to parse numbers
+GENERIC_NUMBER = or_(
+    dictionary(WORDS_HOUR_OF_A_DAY),
+    and_(
+        gte(0),
+        lte(1_000_000_000)
+    )
+    # gram('NUMR'),
+    # # https://github.com/OpenCorpora/opencorpora/issues/818
+    # dictionary({
+    #     'ноль',
+    #     'один'
+    # }),
+)
+
+
+def normalize_generic_number(val) -> int:
+    return int(WORDS_HOUR_OF_A_DAY.get(val, val))
+
+
 RELATIVE_DAY = dictionary(WORDS_RELATIVE_DAY)
 
 HOUR_OF_A_DAY = or_(
@@ -68,6 +88,19 @@ DAY_OF_WEEK = dictionary(WORDS_DAY_OF_WEEK)
 DAY_OF_WEEK_DISCRIMINATOR = dictionary(WORDS_DAY_OF_WEEK_DISCRIMINATOR)
 
 AM_PM = dictionary(WORDS_AM_PM)
+
+TEMPORAL_UNIT = dictionary({
+    "минута",
+    "час",
+    "день",
+    "неделя",
+    "месяц",
+    "год",
+})
+
+TEMPORAL_UNIT_FIXED_NAMED = dictionary({
+    "полчаса",
+})
 
 
 # Facts
@@ -87,6 +120,11 @@ class DayOfWeek(FactDefinition):
     discriminator: Union[str, Attribute]
     day_of_week: Union[str, Attribute]
     day_time: Union[DayTime, Attribute]
+
+
+class RelativeInterval(FactDefinition):
+    unit: Union[str, Attribute]
+    amount: Union[str, Attribute]
 
 
 class Moment(FactDefinition):
@@ -137,10 +175,31 @@ RULE_DAY_OF_THE_WEEK = rule(
     )
 ).interpretation(DayOfWeek)
 
+RULE_AFTER = rule(
+    normalized("через"),
+    or_(
+        rule(
+            GENERIC_NUMBER.optional().interpretation(
+                RelativeInterval.amount.normalized().custom(normalize_generic_number),
+            ),
+
+            TEMPORAL_UNIT.interpretation(
+                RelativeInterval.unit.normalized()
+            )
+        ),
+
+        TEMPORAL_UNIT_FIXED_NAMED.interpretation(
+            RelativeInterval.unit.normalized()
+        )
+    )
+).interpretation(RelativeInterval)
+
 RULE_MOMENT = or_(
     RULE_RELATIVE_DAY.interpretation(Moment.effective_date),
 
     RULE_DAY_OF_THE_WEEK.interpretation(Moment.effective_date),
+
+    RULE_AFTER.interpretation(Moment.effective_date),
 ).interpretation(Moment)
 
 MOMENT_PARSER = Parser(RULE_MOMENT)
