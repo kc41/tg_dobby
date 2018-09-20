@@ -58,8 +58,8 @@ RELATIVE_DAY = dictionary(WORDS_RELATIVE_DAY)
 HOUR_OF_A_DAY = or_(
     dictionary(WORDS_HOUR_OF_A_DAY),
     and_(
-        gte(1),
-        lte(23)
+        gte(0),
+        lte(24)
     )
 )
 
@@ -72,100 +72,80 @@ AM_PM = dictionary(WORDS_AM_PM)
 
 # Facts
 
-class RelativeDayTimeFact(FactDefinition):
-    relative_day: Union[str, Attribute]
+class DayTime(FactDefinition):
     hour: Union[str, Attribute]
+    minute: Union[str, Attribute]
     am_pm: Union[str, Attribute]
 
 
-class DayOfWeekTimeFact(FactDefinition):
+class RelativeDay(FactDefinition):
+    relative_day: Union[str, Attribute]
+    day_time: Union[DayTime, Attribute]
+
+
+class DayOfWeek(FactDefinition):
     discriminator: Union[str, Attribute]
     day_of_week: Union[str, Attribute]
-    hour: Union[str, Attribute]
-    am_pm: Union[str, Attribute]
+    day_time: Union[DayTime, Attribute]
+
+
+class Moment(FactDefinition):
+    effective_date: Union[RelativeDay, DayOfWeek, Attribute]
 
 
 # RULES
 
-RULE_DAY_OF_WEEK_TIME = rule(
+RULE_DAY_TIME = rule(
     rule("в").optional(),
-    DAY_OF_WEEK_DISCRIMINATOR.optional().interpretation(
-        DayOfWeekTimeFact.discriminator
+
+    HOUR_OF_A_DAY.interpretation(
+        DayTime.hour.normalized()
     ),
-    DAY_OF_WEEK.interpretation(
-        DayOfWeekTimeFact.day_of_week.normalized()
-    ),
-    rule(
-        rule("в").optional(),
-        HOUR_OF_A_DAY.interpretation(
-            DayOfWeekTimeFact.hour
-        ),
 
-        normalized("час").optional(),
+    normalized("час").optional(),
 
-        AM_PM.optional().interpretation(
-            DayOfWeekTimeFact.am_pm.normalized()
-        )
-    ).optional()
-).interpretation(
-    DayOfWeekTimeFact
-)
+    AM_PM.optional().interpretation(
+        DayTime.am_pm.normalized()
+    )
+).interpretation(DayTime)
 
-RULE_RELATIVE_DAY_TIME = rule(
+RULE_RELATIVE_DAY = rule(
+    rule("в").optional(),
+
     RELATIVE_DAY.interpretation(
-        RelativeDayTimeFact.relative_day
+        RelativeDay.relative_day.normalized()
     ),
-    rule(
-        rule("в").optional(),
 
-        HOUR_OF_A_DAY.interpretation(
-            RelativeDayTimeFact.hour
-        ),
+    RULE_DAY_TIME.optional().interpretation(
+        RelativeDay.day_time
+    )
+).interpretation(RelativeDay)
 
-        normalized("час").optional(),
+RULE_DAY_OF_THE_WEEK = rule(
+    rule("в").optional(),
 
-        AM_PM.optional().interpretation(
-            RelativeDayTimeFact.am_pm.normalized()
-        )
-    ).optional()
-).interpretation(
-    RelativeDayTimeFact
-)
+    DAY_OF_WEEK_DISCRIMINATOR.optional().interpretation(
+        DayOfWeek.discriminator.normalized()
+    ),
 
-text = """
-завтра в полдень
-завтра
-Послезавтра в 4 часа дня
-Послезавтра в 4 дня
-Через неделю
-Завтра в 4
-В эту пятницу в 4
-В понедельник
-В эту пятницу
-21 числа
-"""
+    DAY_OF_WEEK.interpretation(
+        DayOfWeek.day_of_week.normalized()
+    ),
 
-PARSER_DAY_OF_WEEK = Parser(RULE_DAY_OF_WEEK_TIME)
+    RULE_DAY_TIME.optional().interpretation(
+        DayOfWeek.day_time
+    )
+).interpretation(DayOfWeek)
 
-PARSER_RELATIVE_DAY = Parser(RULE_RELATIVE_DAY_TIME)
+RULE_MOMENT = or_(
+    RULE_RELATIVE_DAY.interpretation(Moment.effective_date),
+
+    RULE_DAY_OF_THE_WEEK.interpretation(Moment.effective_date),
+).interpretation(Moment)
+
+MOMENT_PARSER = Parser(RULE_MOMENT)
 
 
 def analyse_natural_date(txt: str) -> Optional[Fact]:
-    parsers = (PARSER_DAY_OF_WEEK, PARSER_RELATIVE_DAY)
-
-    for parser in parsers:
-        match = parser.find(txt)
-
-        if match:
-            return match.fact
-
-    return None
-
-
-if __name__ == '__main__':
-    for line in text.split("\n"):
-        if not line:
-            continue
-
-        f = analyse_natural_date(line)
-        print(f"{line:<30} -> {f.as_json if f else ''}")
+    match = MOMENT_PARSER.find(txt)
+    return match.fact if match else None
