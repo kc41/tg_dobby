@@ -222,6 +222,6 @@ RULE_MOMENT = or_(
 MOMENT_PARSER = Parser(RULE_MOMENT)
 
 
-def analyse_natural_date(txt: str) -> Optional[Fact]:
+def extract_first_natural_date(txt: str) -> Optional[Fact]:
     match = MOMENT_PARSER.find(txt)
     return match.fact if match else None

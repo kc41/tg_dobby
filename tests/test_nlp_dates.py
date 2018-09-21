@@ -6,7 +6,7 @@ from typing import Union
 from parameterized import parameterized
 from transliterate import translit
 
-from tg_dobby.grammar import analyse_natural_date
+from tg_dobby.grammar import extract_first_natural_date
 from tg_dobby.grammar.model import TemporalUnit, NamedInterval
 from tg_dobby.grammar.natural_dates import Moment, DayOfWeek, DayTime, RelativeDay, RelativeInterval
 
@@ -140,7 +140,7 @@ class NaturalDatesTestCase(unittest.TestCase):
         (escape_test_suffix(case[0]), *case) for case in CASES
     ])
     def test_parse(self, _, text, expected: Union[DayOfWeek, RelativeDay]):
-        actual_moment = analyse_natural_date(text)
+        actual_moment = extract_first_natural_date(text)
 
         expected_moment = Moment(
             effective_date=expected

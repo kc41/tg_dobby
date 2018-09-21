@@ -1,1 +1,1 @@
-from .natural_dates import analyse_natural_date
+from .natural_dates import extract_first_natural_date

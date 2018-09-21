@@ -8,7 +8,7 @@ import yaml
 from aiotg import Chat
 
 from tg_dobby.date_utils import add_months
-from tg_dobby.grammar import analyse_natural_date
+from tg_dobby.grammar import extract_first_natural_date
 from tg_dobby.tg_bot_base import BotCommand, TgBotBase, InlineKeyboardMarkupData, InlineKeyboardButtonData, \
     CallbackQueryData, MessageData
 
@@ -39,7 +39,7 @@ class ParseDateCommand(BotCommand):
             if isinstance(upd, MessageData):
                 txt = upd.text.lower()
 
-                f = analyse_natural_date(txt)
+                f = extract_first_natural_date(txt)
 
                 if f:
                     await self.send_message(
