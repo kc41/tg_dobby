@@ -6,6 +6,7 @@ from yargy.predicates import dictionary, gte, lte, normalized
 
 # WORDS
 from tg_dobby.grammar.yargy_utils import FactDefinition
+from .model import TemporalUnit, NamedInterval
 
 WORDS_RELATIVE_DAY = {
     "сегодня",
@@ -51,6 +52,19 @@ WORDS_DAY_OF_WEEK_DISCRIMINATOR = {
     "ближайшая",
 }
 
+WORDS_TEMPORAL_UNIT = {
+    "минута": TemporalUnit.MINUTE,
+    "час": TemporalUnit.HOUR,
+    "день": TemporalUnit.DAY,
+    "неделя": TemporalUnit.WEEK,
+    "месяц": TemporalUnit.MONTH,
+    "год": TemporalUnit.YEAR,
+}
+
+WORDS_NAMED_INTERVAL = {
+    "полчаса": NamedInterval.HALF_AN_HOUR,
+}
+
 # Parts
 
 # TODO FIX: find adequate way to parse numbers
@@ -89,18 +103,18 @@ DAY_OF_WEEK_DISCRIMINATOR = dictionary(WORDS_DAY_OF_WEEK_DISCRIMINATOR)
 
 AM_PM = dictionary(WORDS_AM_PM)
 
-TEMPORAL_UNIT = dictionary({
-    "минута",
-    "час",
-    "день",
-    "неделя",
-    "месяц",
-    "год",
-})
+TEMPORAL_UNIT = dictionary(WORDS_TEMPORAL_UNIT)
 
-TEMPORAL_UNIT_FIXED_NAMED = dictionary({
-    "полчаса",
-})
+
+def normalize_temporal_unit(val):
+    return WORDS_TEMPORAL_UNIT.get(val)
+
+
+NAMED_INTERVAL = dictionary(WORDS_NAMED_INTERVAL)
+
+
+def normalize_named_interval(val):
+    return WORDS_NAMED_INTERVAL.get(val)
 
 
 # Facts
@@ -123,8 +137,11 @@ class DayOfWeek(FactDefinition):
 
 
 class RelativeInterval(FactDefinition):
-    unit: Union[str, Attribute]
-    amount: Union[str, Attribute]
+    unit: Union[
+        TemporalUnit, NamedInterval,
+        Attribute
+    ]
+    amount: Union[int, Attribute]
 
 
 class Moment(FactDefinition):
@@ -184,12 +201,12 @@ RULE_AFTER = rule(
             ),
 
             TEMPORAL_UNIT.interpretation(
-                RelativeInterval.unit.normalized()
+                RelativeInterval.unit.normalized().custom(normalize_temporal_unit)
             )
         ),
 
-        TEMPORAL_UNIT_FIXED_NAMED.interpretation(
-            RelativeInterval.unit.normalized()
+        NAMED_INTERVAL.interpretation(
+            RelativeInterval.unit.normalized().custom(normalize_named_interval)
         )
     )
 ).interpretation(RelativeInterval)

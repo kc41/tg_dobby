@@ -7,7 +7,8 @@ from parameterized import parameterized
 from transliterate import translit
 
 from tg_dobby.grammar import analyse_natural_date
-from tg_dobby.grammar.natural_dates import Moment, DayOfWeek, DayTime, RelativeDay
+from tg_dobby.grammar.model import TemporalUnit, NamedInterval
+from tg_dobby.grammar.natural_dates import Moment, DayOfWeek, DayTime, RelativeDay, RelativeInterval
 
 CASES = (
     (
@@ -94,6 +95,35 @@ CASES = (
             day_time=None
         )
     ),
+    # Через X
+    (
+        "Через 30 минут",
+        RelativeInterval(
+            unit=TemporalUnit.MINUTE,
+            amount=30,
+        )
+    ),
+    (
+        "Через полчаса",
+        RelativeInterval(
+            unit=NamedInterval.HALF_AN_HOUR,
+            amount=None,
+        )
+    ),
+    (
+        "Через месяц",
+        RelativeInterval(
+            unit=TemporalUnit.MONTH,
+            amount=None,
+        )
+    ),
+    (
+        "Через 1 месяц",
+        RelativeInterval(
+            unit=TemporalUnit.MONTH,
+            amount=1,
+        )
+    ),
 )
 
 
@@ -121,4 +151,3 @@ class NaturalDatesTestCase(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
-
