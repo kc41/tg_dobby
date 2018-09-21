@@ -1,6 +1,6 @@
 from aiohttp import web
 
-from tg_notificator.appw import AppWrapper
+from tg_dobby.appw import AppWrapper
 
 
 class BaseView(web.View):

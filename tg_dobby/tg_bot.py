@@ -7,9 +7,9 @@ import json
 import yaml
 from aiotg import Chat
 
-from tg_notificator.date_utils import add_months
-from tg_notificator.grammar import analyse_natural_date
-from tg_notificator.tg_bot_base import BotCommand, TgBotBase, InlineKeyboardMarkupData, InlineKeyboardButtonData, \
+from tg_dobby.date_utils import add_months
+from tg_dobby.grammar import analyse_natural_date
+from tg_dobby.tg_bot_base import BotCommand, TgBotBase, InlineKeyboardMarkupData, InlineKeyboardButtonData, \
     CallbackQueryData, MessageData
 
 log = logging.getLogger(__name__)

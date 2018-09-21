@@ -5,7 +5,7 @@ from yargy.interpretation.fact import Fact
 from yargy.predicates import dictionary, gte, lte, normalized
 
 # WORDS
-from tg_notificator.grammar.yargy_utils import FactDefinition
+from tg_dobby.grammar.yargy_utils import FactDefinition
 
 WORDS_RELATIVE_DAY = {
     "сегодня",

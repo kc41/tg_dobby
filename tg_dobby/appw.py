@@ -2,9 +2,9 @@ import asyncio
 from aiohttp import web
 import aioredis
 
-from tg_notificator.tg_bot_base import TgBotBase
-from tg_notificator.settings import AppSettings
-from tg_notificator.user_registry import AbstractUserRegistry
+from tg_dobby.tg_bot_base import TgBotBase
+from tg_dobby.settings import AppSettings
+from tg_dobby.user_registry import AbstractUserRegistry
 
 
 # TODO CONSIDER: use as web.Application mixin (check options for typing)

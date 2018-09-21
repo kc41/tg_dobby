@@ -8,10 +8,10 @@ import aiotg
 
 import pydantic
 
-from tg_notificator.user_registry import TgUser
+from tg_dobby.user_registry import TgUser
 
 if TYPE_CHECKING:
-    from tg_notificator.appw import AppWrapper
+    from tg_dobby.appw import AppWrapper
 
 log = logging.getLogger(__name__)
 

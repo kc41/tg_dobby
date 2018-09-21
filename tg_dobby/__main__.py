@@ -4,9 +4,9 @@ import asyncio
 import sys
 from aiohttp import web
 
-from tg_notificator.app import create_application
-from tg_notificator.logging_config import init_logging
-from tg_notificator.settings import AppSettings
+from tg_dobby.app import create_application
+from tg_dobby.logging_config import init_logging
+from tg_dobby.settings import AppSettings
 
 log = logging.getLogger(__name__)
 

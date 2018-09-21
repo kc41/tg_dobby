@@ -6,8 +6,8 @@ from typing import Union
 from parameterized import parameterized
 from transliterate import translit
 
-from tg_notificator.grammar import analyse_natural_date
-from tg_notificator.grammar.natural_dates import Moment, DayOfWeek, DayTime, RelativeDay
+from tg_dobby.grammar import analyse_natural_date
+from tg_dobby.grammar.natural_dates import Moment, DayOfWeek, DayTime, RelativeDay
 
 CASES = (
     (

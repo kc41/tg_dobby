@@ -5,11 +5,11 @@ import asyncio
 import aioredis
 from aiohttp import web
 
-from tg_notificator import views
-from tg_notificator.appw import AppWrapper
-from tg_notificator.tg_bot import TgBot
-from tg_notificator.settings import AppSettings
-from tg_notificator.user_registry import RedisHashSetUserRegistry
+from tg_dobby import views
+from tg_dobby.appw import AppWrapper
+from tg_dobby.tg_bot import TgBot
+from tg_dobby.settings import AppSettings
+from tg_dobby.user_registry import RedisHashSetUserRegistry
 
 log = logging.getLogger(__name__)
 

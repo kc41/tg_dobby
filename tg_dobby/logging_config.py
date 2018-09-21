@@ -38,7 +38,7 @@ def init_logging():
                 'level': 'INFO',
             },
 
-            'tg_notificator.app': {
+            'tg_dobby.app': {
                 'level': 'INFO',
             },
 
