@@ -11,7 +11,7 @@ from tg_dobby.grammar.natural_dates_post_processing import get_day_time, get_abs
 from tg_dobby.grammar.natural_dates import DayTime, RULE_DAY_TIME, Moment, RULE_MOMENT
 
 CORRECT_TIME_CASES = (
-    ("14:00", (14, 00)),
+    ("14:00", None, (14, 00)),
     ("два часа дня", None, (14, 00)),
     ("два дня", None, (14, 00)),
     ("12 ночи", None, (00, 00)),

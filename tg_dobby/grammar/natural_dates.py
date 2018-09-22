@@ -168,14 +168,33 @@ class Moment(FactDefinition):
 RULE_DAY_TIME = rule(
     rule("в").optional(),
 
-    HOUR_OF_A_DAY.interpretation(
-        DayTime.hour.normalized().custom(lambda val: int(WORDS_HOUR_OF_A_DAY.get(val, val)))
-    ),
+    or_(
+        rule(
+            HOUR_OF_A_DAY.interpretation(
+                DayTime.hour.normalized().custom(lambda val: int(WORDS_HOUR_OF_A_DAY.get(val, val)))
+            ),
 
-    normalized("час").optional(),
+            normalized("час").optional(),
 
-    AM_PM.optional().interpretation(
-        DayTime.am_pm.normalized().custom(normalize_am_pm)
+            AM_PM.optional().interpretation(
+                DayTime.am_pm.normalized().custom(normalize_am_pm)
+            )
+        ),
+        rule(
+            and_(
+                gte(0),
+                lte(23),
+            ).interpretation(
+                DayTime.hour.normalized().custom(int)
+            ),
+            ":",
+            and_(
+                gte(0),
+                lte(59)
+            ).interpretation(
+                DayTime.minute.normalized().custom(int)
+            ),
+        )
     )
 ).interpretation(DayTime)
 
