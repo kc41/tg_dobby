@@ -52,7 +52,7 @@ CASES = (
 )
 
 
-class NaturalDatesTestCase(unittest.TestCase):
+class PhraseTokenizerTestCase(unittest.TestCase):
 
     @parameterized.expand([
         (escape_test_suffix(case[0]), *case) for case in CASES
