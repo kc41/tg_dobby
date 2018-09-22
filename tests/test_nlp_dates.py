@@ -6,61 +6,61 @@ from parameterized import parameterized
 
 from tests.utils import escape_test_suffix
 from tg_dobby.grammar import extract_first_natural_date
-from tg_dobby.grammar.model import TemporalUnit, NamedInterval
+from tg_dobby.grammar.model import TemporalUnit, NamedInterval, RelativeDayOption, UnitRelativePosition, TimesOfADayOption
 from tg_dobby.grammar.natural_dates import Moment, DayOfWeek, DayTime, RelativeDay, RelativeInterval
 
 CASES = (
     (
         "завтра",
         RelativeDay(
-            relative_day="завтра",
+            relative_day=RelativeDayOption.TOMORROW,
             day_time=None
         )
     ),
     (
         "Послезавтра в 4 часа дня",
         RelativeDay(
-            relative_day="послезавтра",
+            relative_day=RelativeDayOption.THE_DAY_AFTER_TOMORROW,
             day_time=DayTime(
                 hour=4,
-                am_pm="день",
+                am_pm=TimesOfADayOption.DAY,
             )
         )
     ),
     (
         "Послезавтра в четыре часа дня",
         RelativeDay(
-            relative_day="послезавтра",
+            relative_day=RelativeDayOption.THE_DAY_AFTER_TOMORROW,
             day_time=DayTime(
                 hour=4,
-                am_pm="день",
+                am_pm=TimesOfADayOption.DAY,
             )
         )
     ),
     (
         "Послезавтра в две часа дня",
         RelativeDay(
-            relative_day="послезавтра",
+            relative_day=RelativeDayOption.THE_DAY_AFTER_TOMORROW,
             day_time=DayTime(
                 hour=2,
-                am_pm="день",
+                am_pm=TimesOfADayOption.DAY,
             )
         )
     ),
     (
         "Послезавтра в 4 дня",
         RelativeDay(
-            relative_day="послезавтра",
+            relative_day=RelativeDayOption.THE_DAY_AFTER_TOMORROW,
             day_time=DayTime(
                 hour=4,
-                am_pm="день",
+                am_pm=TimesOfADayOption.DAY,
             )
         )
     ),
     (
         "Завтра в 4",
         RelativeDay(
-            relative_day="завтра",
+            relative_day=RelativeDayOption.TOMORROW,
             day_time=DayTime(
                 hour=4,
             )
@@ -69,7 +69,7 @@ CASES = (
     (
         "В эту пятницу в 4",
         DayOfWeek(
-            discriminator="этот",
+            discriminator=UnitRelativePosition.THIS,
             day_of_week="пятница",
             day_time=DayTime(
                 hour=4,
@@ -89,7 +89,7 @@ CASES = (
     (
         "В эту пятницу",
         DayOfWeek(
-            discriminator="этот",
+            discriminator=UnitRelativePosition.THIS,
             day_of_week="пятница",
             day_time=None
         )
@@ -128,9 +128,6 @@ CASES = (
 
 class NaturalDatesTestCase(unittest.TestCase):
 
-    def test_test(self):
-        pass
-
     @parameterized.expand([
         (escape_test_suffix(case[0]), *case) for case in CASES
     ])
@@ -141,7 +138,7 @@ class NaturalDatesTestCase(unittest.TestCase):
             effective_date=expected
         ) if expected else None
 
-        self.assertEqual(actual_moment, expected_moment)
+        self.assertEqual(expected_moment, actual_moment)
 
 
 if __name__ == '__main__':

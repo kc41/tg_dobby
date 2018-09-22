@@ -6,12 +6,12 @@ from yargy.predicates import dictionary, gte, lte, normalized
 
 # WORDS
 from tg_dobby.grammar.yargy_utils import FactDefinition
-from .model import TemporalUnit, NamedInterval
+from .model import TemporalUnit, NamedInterval, RelativeDayOption, TimesOfADayOption, UnitRelativePosition
 
 WORDS_RELATIVE_DAY = {
-    "сегодня",
-    "завтра",
-    "послезавтра",
+    "сегодня": RelativeDayOption.TODAY,
+    "завтра": RelativeDayOption.TOMORROW,
+    "послезавтра": RelativeDayOption.THE_DAY_AFTER_TOMORROW,
 }
 
 WORDS_DAY_OF_WEEK = {
@@ -40,16 +40,16 @@ WORDS_HOUR_OF_A_DAY = {
 }
 
 WORDS_AM_PM = {
-    "день",
-    "ночь",
-    "утро",
-    "вечер",
+    "день": TimesOfADayOption.DAY,
+    "ночь": TimesOfADayOption.NIGHT,
+    "утро": TimesOfADayOption.MORNING,
+    "вечер": TimesOfADayOption.EVENING,
 }
 
 WORDS_DAY_OF_WEEK_DISCRIMINATOR = {
-    "эта",
-    "следующая",
-    "ближайшая",
+    "этот": UnitRelativePosition.THIS,
+    "следующий": UnitRelativePosition.NEXT,
+    "ближайший": UnitRelativePosition.CLOSEST,
 }
 
 WORDS_TEMPORAL_UNIT = {
@@ -89,6 +89,11 @@ def normalize_generic_number(val) -> int:
 
 RELATIVE_DAY = dictionary(WORDS_RELATIVE_DAY)
 
+
+def normalize_relative_day(val) -> RelativeDayOption:
+    return WORDS_RELATIVE_DAY.get(val, val)
+
+
 HOUR_OF_A_DAY = or_(
     dictionary(WORDS_HOUR_OF_A_DAY),
     and_(
@@ -101,7 +106,17 @@ DAY_OF_WEEK = dictionary(WORDS_DAY_OF_WEEK)
 
 DAY_OF_WEEK_DISCRIMINATOR = dictionary(WORDS_DAY_OF_WEEK_DISCRIMINATOR)
 
+
+def normalize_day_of_week_discriminator(val):
+    return WORDS_DAY_OF_WEEK_DISCRIMINATOR.get(val, val)
+
+
 AM_PM = dictionary(WORDS_AM_PM)
+
+
+def normalize_am_pm(val):
+    return WORDS_AM_PM.get(val, val)
+
 
 TEMPORAL_UNIT = dictionary(WORDS_TEMPORAL_UNIT)
 
@@ -120,8 +135,8 @@ def normalize_named_interval(val):
 # Facts
 
 class DayTime(FactDefinition):
-    hour: Union[str, Attribute]
-    minute: Union[str, Attribute]
+    hour: Union[int, Attribute]
+    minute: Union[int, Attribute]
     am_pm: Union[str, Attribute]
 
 
@@ -145,7 +160,7 @@ class RelativeInterval(FactDefinition):
 
 
 class Moment(FactDefinition):
-    effective_date: Union[RelativeDay, DayOfWeek, Attribute]
+    effective_date: Union[RelativeDay, DayOfWeek, RelativeInterval, Attribute]
 
 
 # RULES
@@ -160,7 +175,7 @@ RULE_DAY_TIME = rule(
     normalized("час").optional(),
 
     AM_PM.optional().interpretation(
-        DayTime.am_pm.normalized()
+        DayTime.am_pm.normalized().custom(normalize_am_pm)
     )
 ).interpretation(DayTime)
 
@@ -168,7 +183,7 @@ RULE_RELATIVE_DAY = rule(
     rule("в").optional(),
 
     RELATIVE_DAY.interpretation(
-        RelativeDay.relative_day.normalized()
+        RelativeDay.relative_day.normalized().custom(normalize_relative_day)
     ),
 
     RULE_DAY_TIME.optional().interpretation(
@@ -180,7 +195,7 @@ RULE_DAY_OF_THE_WEEK = rule(
     rule("в").optional(),
 
     DAY_OF_WEEK_DISCRIMINATOR.optional().interpretation(
-        DayOfWeek.discriminator.normalized()
+        DayOfWeek.discriminator.normalized().custom(normalize_day_of_week_discriminator)
     ),
 
     DAY_OF_WEEK.interpretation(
