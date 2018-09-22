@@ -1,11 +1,10 @@
 import unittest
 
-import re
 from typing import Union
 
 from parameterized import parameterized
-from transliterate import translit
 
+from tests.utils import escape_test_suffix
 from tg_dobby.grammar import extract_first_natural_date
 from tg_dobby.grammar.model import TemporalUnit, NamedInterval
 from tg_dobby.grammar.natural_dates import Moment, DayOfWeek, DayTime, RelativeDay, RelativeInterval
@@ -125,10 +124,6 @@ CASES = (
         )
     ),
 )
-
-
-def escape_test_suffix(txt):
-    return re.sub(r"[\s\-]+", "_", translit(txt.lower(), reversed=True))
 
 
 class NaturalDatesTestCase(unittest.TestCase):
