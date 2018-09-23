@@ -38,11 +38,17 @@ def _assume_clarification(base: datetime) -> DateClarification:
 def get_day_time(day_time: DayTime, base: datetime = None) -> Tuple[int, int]:
     hour = day_time.hour
     minute = day_time.minute if day_time.minute else 0
+    # second = day_time.second if day_time.second else 0
+
     am_pm = day_time.am_pm
 
     UNK_TIME_OF_A_DAY = f"Unknown time of a day: {am_pm}"
 
-    if day_time.hour > 12:
+    # If format is HH:MM -> interpret as 24H format
+    if day_time.strict_format:
+        return hour, minute
+
+    elif day_time.hour > 12:
         return hour, minute
 
     elif day_time.hour == 12:

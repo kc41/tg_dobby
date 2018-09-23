@@ -2,7 +2,7 @@ from typing import Optional, Union
 from yargy import Parser, rule, and_, or_
 from yargy.interpretation.attribute import Attribute
 from yargy.interpretation.fact import Fact
-from yargy.predicates import dictionary, gte, lte, normalized
+from yargy.predicates import dictionary, gte, lte, normalized, eq
 
 # WORDS
 from tg_dobby.grammar.yargy_utils import FactDefinition
@@ -137,6 +137,8 @@ def normalize_named_interval(val):
 class DayTime(FactDefinition):
     hour: Union[int, Attribute]
     minute: Union[int, Attribute]
+    second: Union[int, Attribute]
+    strict_format: Union[bool, Attribute]
     am_pm: Union[str, Attribute]
 
 
@@ -185,15 +187,16 @@ RULE_DAY_TIME = rule(
                 gte(0),
                 lte(23),
             ).interpretation(
-                DayTime.hour.normalized().custom(int)
+                DayTime.hour.custom(int)
             ),
-            ":",
+            eq(":").interpretation(DayTime.strict_format.custom(lambda _: True)),
             and_(
                 gte(0),
                 lte(59)
             ).interpretation(
                 DayTime.minute.normalized().custom(int)
             ),
+            rule(":", and_(gte(0), lte(59)).interpretation(DayTime.second.custom(int))).optional()
         )
     )
 ).interpretation(DayTime)

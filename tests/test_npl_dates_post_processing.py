@@ -12,6 +12,8 @@ from tg_dobby.grammar.natural_dates import DayTime, RULE_DAY_TIME, Moment, RULE_
 
 CORRECT_TIME_CASES = (
     ("14:00", None, (14, 00)),
+    ("14:00:14", None, (14, 00)),
+    ("02:00", None, (2, 00)),
     ("два часа дня", None, (14, 00)),
     ("два дня", None, (14, 00)),
     ("12 ночи", None, (00, 00)),
