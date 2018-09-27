@@ -143,7 +143,7 @@ class DayTime(FactDefinition):
 
 
 class RelativeDay(FactDefinition):
-    relative_day: Union[str, Attribute]
+    relative_day: Union[RelativeDayOption, Attribute]
     day_time: Union[DayTime, Attribute]
 
 

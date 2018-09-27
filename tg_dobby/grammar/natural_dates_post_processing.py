@@ -1,11 +1,11 @@
-from typing import NamedTuple, Tuple
+from typing import Tuple
 
 from tg_dobby.grammar.model import (
     TemporalUnit,
     NamedInterval,
 
     TimesOfADayOption as ToaD,
-)
+    RelativeDayOption)
 
 from tg_dobby.grammar.natural_dates import (
     Moment,
@@ -15,12 +15,7 @@ from tg_dobby.grammar.natural_dates import (
     DayTime
 )
 
-from datetime import datetime, timedelta, time
-
-
-class DateClarification(NamedTuple):
-    time: time = None
-    pm: bool = None
+from datetime import datetime, timedelta
 
 
 class ClarificationRequired(Exception):
@@ -31,9 +26,9 @@ class InvalidRelativeDateException(Exception):
     pass
 
 
-def _assume_clarification(base: datetime) -> DateClarification:
-    pass
-
+########################
+# Post-processing logic
+########################
 
 def get_day_time(day_time: DayTime, base: datetime = None) -> Tuple[int, int]:
     hour = day_time.hour
@@ -70,11 +65,15 @@ def get_day_time(day_time: DayTime, base: datetime = None) -> Tuple[int, int]:
             raise InvalidRelativeDateException(UNK_TIME_OF_A_DAY)
 
 
+def set_day_time(base: datetime, day_time: DayTime) -> datetime:
+    hours, minutes = get_day_time(day_time=day_time, base=base)
+
+    return base.replace(hour=hours, minute=minutes, second=0, microsecond=0)
+
+
 def get_absolute_date(
         moment: Moment,
         base: datetime = None,
-        clarification: DateClarification = None,
-        assume_clarification=False
 ) -> datetime:
     if base is None:
         base = datetime.now()
@@ -98,8 +97,33 @@ def get_absolute_date(
         else:
             raise InvalidRelativeDateException(f"Unknown unit/amount combination: {unit}, {distance.amount}")
 
+    # TODO FIX: request date clarification in 23:00 - 04:00 time range
     if isinstance(distance, RelativeDay):
-        pass
+        rd = distance.relative_day
+
+        if rd == RelativeDayOption.TODAY:
+            if distance.day_time:
+                return set_day_time(base, distance.day_time)
+
+            raise ClarificationRequired()
+
+        elif rd == RelativeDayOption.TOMORROW:
+            if distance.day_time:
+                return set_day_time(base, distance.day_time) + timedelta(days=1)
+
+            raise ClarificationRequired()
+
+        elif rd == RelativeDayOption.THE_DAY_AFTER_TOMORROW:
+            if distance.day_time:
+                return set_day_time(base, distance.day_time) + timedelta(days=2)
+
+            raise ClarificationRequired()
+
+        else:
+            raise InvalidRelativeDateException(f"Unknown relative day option: {rd}")
+
+    if isinstance(distance, DayOfWeek):
+        raise InvalidRelativeDateException(f"This type of relative date is not supported: {type(distance).__name__}")
 
     else:
         raise InvalidRelativeDateException(f"This type of relative date is not supported: {type(distance).__name__}")

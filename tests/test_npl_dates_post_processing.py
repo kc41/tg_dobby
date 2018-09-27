@@ -80,6 +80,26 @@ CORRECT_DATE_TIME_CASES = (
         datetime(year=_Y, month=9, day=2, hour=23, minute=45),
         datetime(year=_Y, month=9, day=9, hour=23, minute=45),
     ),
+    (
+        "завтра в 14:00",
+        datetime(year=_Y, month=9, day=2, hour=13, minute=45),
+        datetime(year=_Y, month=9, day=3, hour=14, minute=00),
+    ),
+    (
+        "завтра в два дня",
+        datetime(year=_Y, month=9, day=2, hour=13, minute=45),
+        datetime(year=_Y, month=9, day=3, hour=14, minute=00),
+    ),
+    (
+        "сегодня в 15:30",
+        datetime(year=_Y, month=9, day=2, hour=13, minute=45),
+        datetime(year=_Y, month=9, day=2, hour=15, minute=30),
+    ),
+    (
+        "послезавтра в 15:30",
+        datetime(year=_Y, month=12, day=31, hour=13, minute=45),
+        datetime(year=_Y + 1, month=1, day=2, hour=15, minute=30),
+    ),
 )
 
 
