@@ -26,7 +26,7 @@ class TokenFact(FactDefinition):
     nested_fact: FactDefinition
 
 
-def tokenize_phrase(txt: str, rules=(RULE_MOMENT, RULE_REMINDER_PREAMBLE,)) -> List[Union[str, yargy.parser.Match]]:
+def tokenize_phrase(txt: str, rules=(RULE_MOMENT, RULE_REMINDER_PREAMBLE,)) -> List[Union[RawText, yargy.parser.Match]]:
     parser = Parser(
         or_(*[
             r.interpretation(TokenFact.nested_fact) for r in rules
