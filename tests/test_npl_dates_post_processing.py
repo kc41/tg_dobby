@@ -13,8 +13,8 @@ from tg_dobby.grammar.natural_dates_post_processing import (
     ALL_CLARIFICATIONS_CLASSES,
     DayTimeClarification,
     ClarificationRequired,
-)
-from tg_dobby.grammar.natural_dates import DayTime, RULE_DAY_TIME, Moment, RULE_MOMENT
+    TimeOfADayClarification)
+from tg_dobby.grammar.natural_dates import DayTime, RULE_DAY_TIME, Moment, RULE_MOMENT, TimesOfADayOption as ToaD
 
 CORRECT_TIME_CASES = (
     ("14:00", None, time(14, 00)),
@@ -117,6 +117,12 @@ CLARIFICATION_DATE_TIME_CASES = (
         datetime(year=_Y, month=9, day=2, hour=14, minute=45),
         DayTimeClarification(time(15, 00)),
         datetime(year=_Y, month=9, day=3, hour=15, minute=00),
+    ),
+    ClarifiedDateTimeCase(
+        "завтра в два",
+        datetime(year=_Y, month=9, day=2, hour=14, minute=45),
+        TimeOfADayClarification(ToaD.NIGHT),
+        datetime(year=_Y, month=9, day=3, hour=2, minute=00),
     ),
 )
 

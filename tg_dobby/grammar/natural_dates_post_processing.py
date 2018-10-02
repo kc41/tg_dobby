@@ -58,18 +58,23 @@ class InvalidRelativeDateException(Exception):
 # Post-processing logic
 ########################
 
-def get_day_time(day_time: DayTime, base: datetime = None) -> time:
+def get_day_time(day_time: DayTime, base: datetime = None,
+                 clarifications: Iterable[ALL_CLARIFICATIONS_CLASSES] = ()) -> time:
     hour = day_time.hour
     minute = day_time.minute if day_time.minute else 0
     second = day_time.second if day_time.second else 0
 
-    am_pm = day_time.am_pm
+    am_pm_clarification = next((c for c in clarifications if isinstance(c, TimeOfADayClarification)), None)
+
+    am_pm = am_pm_clarification.time_of_a_day if am_pm_clarification else day_time.am_pm
 
     UNK_TIME_OF_A_DAY = f"Unknown time of a day: {am_pm}"
 
-    # TODO FIX: realize more adequate AM/PM assumption mechanism
     def assume_am_pm():
-        return ToaD.DAY
+        if base:
+            return ToaD.DAY if base.hour >= 12 else ToaD.NIGHT
+        else:
+            return ToaD.DAY
 
     # If format is HH:MM -> interpret as 24H format
     if day_time.strict_format:
@@ -105,10 +110,8 @@ def get_day_time(day_time: DayTime, base: datetime = None) -> time:
             raise InvalidRelativeDateException(UNK_TIME_OF_A_DAY)
 
 
-def set_day_time(base: datetime, day_time: Union[DayTime, time]) -> datetime:
-    parsed_time = day_time if isinstance(day_time, time) else get_day_time(day_time=day_time, base=base)
-
-    return base.replace(hour=parsed_time.hour, minute=parsed_time.minute, second=parsed_time.second, microsecond=0)
+def set_day_time(base: datetime, day_time: time) -> datetime:
+    return base.replace(hour=day_time.hour, minute=day_time.minute, second=day_time.second, microsecond=0)
 
 
 # TODO FIX: request date clarification in 23:00 - 04:00 time range
@@ -120,10 +123,12 @@ def natural_relative_day_to_absolute_date(
 
     day_time_clarification = next((c for c in clarifications if isinstance(c, DayTimeClarification)), None)
 
+    day_time = None  # type: time
+
     if day_time_clarification:
         day_time = day_time_clarification.day_time
-    else:
-        day_time = relative_day.day_time
+    elif relative_day.day_time:
+        day_time = get_day_time(relative_day.day_time, base=base, clarifications=clarifications)
 
     if rd == RelativeDayOption.TODAY:
         if day_time:
