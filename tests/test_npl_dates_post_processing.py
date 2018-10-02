@@ -1,13 +1,19 @@
 import unittest
 from datetime import datetime, time
 
-from typing import Tuple
+from typing import Tuple, NamedTuple
 
 from parameterized import parameterized
 from yargy import Parser
 
 from tests.utils import escape_test_suffix
-from tg_dobby.grammar.natural_dates_post_processing import get_day_time, get_absolute_date
+from tg_dobby.grammar.natural_dates_post_processing import (
+    get_day_time,
+    get_absolute_date,
+    ALL_CLARIFICATIONS_CLASSES,
+    DayTimeClarification,
+    ClarificationRequired,
+)
 from tg_dobby.grammar.natural_dates import DayTime, RULE_DAY_TIME, Moment, RULE_MOMENT
 
 CORRECT_TIME_CASES = (
@@ -65,12 +71,6 @@ CORRECT_DATE_TIME_CASES = (
         datetime(year=_Y, month=9, day=2, hour=23, minute=45),
         datetime(year=_Y, month=9, day=3, hour=1, minute=45),
     ),
-    # TODO FIX: Move to incorrect cases
-    # (
-    #     "завтра",
-    #     datetime(year=_Y, month=9, day=2, hour=23, minute=45),
-    #     datetime(year=_Y, month=9, day=3, hour=23, minute=45),
-    # ),
     (
         "через день",
         datetime(year=_Y, month=9, day=2, hour=23, minute=45),
@@ -104,6 +104,23 @@ CORRECT_DATE_TIME_CASES = (
 )
 
 
+class ClarifiedDateTimeCase(NamedTuple):
+    text: str
+    base_datetime: datetime
+    clarification: ALL_CLARIFICATIONS_CLASSES
+    expected_result: datetime
+
+
+CLARIFICATION_DATE_TIME_CASES = (
+    ClarifiedDateTimeCase(
+        "завтра",
+        datetime(year=_Y, month=9, day=2, hour=14, minute=45),
+        DayTimeClarification(time(15, 00)),
+        datetime(year=_Y, month=9, day=3, hour=15, minute=00),
+    ),
+)
+
+
 class NaturalDateFullProcessingTestCase(unittest.TestCase):
 
     @classmethod
@@ -126,6 +143,30 @@ class NaturalDateFullProcessingTestCase(unittest.TestCase):
         actual_time = get_absolute_date(parsed_moment, base=base_datetime)
 
         self.assertEqual(expected_time, actual_time, f"Wrong interpretation for {text}")
+
+    @parameterized.expand([
+        (escape_test_suffix(case.text), case) for case in CLARIFICATION_DATE_TIME_CASES
+    ])
+    def test_clarified_moment(self, _, case: ClarifiedDateTimeCase):
+        parsed_moment = self._parse_natural_daytime(case.text)
+
+        # Check that clarification required fires
+        with self.assertRaises(ClarificationRequired):
+            get_absolute_date(parsed_moment, base=case.base_datetime)
+
+        # Check that requested clarification matches expected type
+        try:
+            get_absolute_date(parsed_moment, base=case.base_datetime)
+        except ClarificationRequired as e:
+            self.assertListEqual(
+                [type(case.clarification)],
+                [type(rc) for rc in e.required_clarifications],
+                "Requested clarification types does not match"
+            )
+
+        # Check with provided clarification
+        actual_result = get_absolute_date(parsed_moment, base=case.base_datetime, clarifications=(case.clarification,))
+        self.assertEqual(case.expected_result, actual_result, f"Wrong interpretation for {case.text}")
 
 
 if __name__ == '__main__':
