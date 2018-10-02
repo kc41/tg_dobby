@@ -1,5 +1,5 @@
 import unittest
-from datetime import datetime
+from datetime import datetime, time
 
 from typing import Tuple
 
@@ -11,15 +11,15 @@ from tg_dobby.grammar.natural_dates_post_processing import get_day_time, get_abs
 from tg_dobby.grammar.natural_dates import DayTime, RULE_DAY_TIME, Moment, RULE_MOMENT
 
 CORRECT_TIME_CASES = (
-    ("14:00", None, (14, 00)),
-    ("14:00:14", None, (14, 00)),
-    ("02:00", None, (2, 00)),
-    ("два часа дня", None, (14, 00)),
-    ("два дня", None, (14, 00)),
-    ("12 ночи", None, (00, 00)),
-    ("12 утра", None, (12, 00)),
-    ("12 дня", None, (12, 00)),
-    ("3 утра", None, (3, 00)),
+    ("14:00", None, time(14, 00)),
+    ("14:00:14", None, time(14, 00, 14)),
+    ("02:00", None, time(2, 00)),
+    ("два часа дня", None, time(14, 00)),
+    ("два дня", None, time(14, 00)),
+    ("12 ночи", None, time(00, 00)),
+    ("12 утра", None, time(12, 00)),
+    ("12 дня", None, time(12, 00)),
+    ("3 утра", None, time(3, 00)),
 )
 
 
@@ -65,11 +65,12 @@ CORRECT_DATE_TIME_CASES = (
         datetime(year=_Y, month=9, day=2, hour=23, minute=45),
         datetime(year=_Y, month=9, day=3, hour=1, minute=45),
     ),
-    (
-        "завтра",
-        datetime(year=_Y, month=9, day=2, hour=23, minute=45),
-        datetime(year=_Y, month=9, day=3, hour=23, minute=45),
-    ),
+    # TODO FIX: Move to incorrect cases
+    # (
+    #     "завтра",
+    #     datetime(year=_Y, month=9, day=2, hour=23, minute=45),
+    #     datetime(year=_Y, month=9, day=3, hour=23, minute=45),
+    # ),
     (
         "через день",
         datetime(year=_Y, month=9, day=2, hour=23, minute=45),

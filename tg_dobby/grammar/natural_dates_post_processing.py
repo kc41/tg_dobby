@@ -1,4 +1,4 @@
-from typing import Tuple, NamedTuple, Union, List
+from typing import Tuple, NamedTuple, Union, Iterable
 
 from tg_dobby.grammar.model import (
     TemporalUnit,
@@ -58,10 +58,10 @@ class InvalidRelativeDateException(Exception):
 # Post-processing logic
 ########################
 
-def get_day_time(day_time: DayTime, base: datetime = None) -> Tuple[int, int]:
+def get_day_time(day_time: DayTime, base: datetime = None) -> time:
     hour = day_time.hour
     minute = day_time.minute if day_time.minute else 0
-    # second = day_time.second if day_time.second else 0
+    second = day_time.second if day_time.second else 0
 
     am_pm = day_time.am_pm
 
@@ -73,17 +73,17 @@ def get_day_time(day_time: DayTime, base: datetime = None) -> Tuple[int, int]:
 
     # If format is HH:MM -> interpret as 24H format
     if day_time.strict_format:
-        return hour, minute
+        return time(hour=hour, minute=minute, second=second)
 
     elif day_time.hour > 12:
-        return hour, minute
+        return time(hour=hour, minute=minute, second=second)
 
     elif day_time.hour == 12:
         if am_pm in (ToaD.NIGHT, ToaD.EVENING):
-            return 0, minute
+            return time(hour=0, minute=minute, second=second)
 
         elif am_pm in (ToaD.MORNING, ToaD.DAY):
-            return 12, minute
+            return time(12, minute, second=second)
 
         if not am_pm:
             raise ClarificationRequired(TimeOfADayClarification(assume_am_pm()))
@@ -93,10 +93,10 @@ def get_day_time(day_time: DayTime, base: datetime = None) -> Tuple[int, int]:
 
     else:
         if am_pm in (ToaD.MORNING, ToaD.NIGHT):
-            return hour, minute
+            return time(hour=hour, minute=minute, second=second)
 
         elif am_pm in (ToaD.DAY, ToaD.EVENING):
-            return hour + 12, minute
+            return time(hour=hour + 12, minute=minute, second=second)
 
         elif not am_pm:
             raise ClarificationRequired(TimeOfADayClarification(assume_am_pm()))
@@ -105,34 +105,43 @@ def get_day_time(day_time: DayTime, base: datetime = None) -> Tuple[int, int]:
             raise InvalidRelativeDateException(UNK_TIME_OF_A_DAY)
 
 
-def set_day_time(base: datetime, day_time: DayTime) -> datetime:
-    hours, minutes = get_day_time(day_time=day_time, base=base)
+def set_day_time(base: datetime, day_time: Union[DayTime, time]) -> datetime:
+    parsed_time = day_time if isinstance(day_time, time) else get_day_time(day_time=day_time, base=base)
 
-    return base.replace(hour=hours, minute=minutes, second=0, microsecond=0)
+    return base.replace(hour=parsed_time.hour, minute=parsed_time.minute, second=parsed_time.second, microsecond=0)
 
 
 # TODO FIX: request date clarification in 23:00 - 04:00 time range
-def natural_relative_day_to_absolute_date(relative_day: RelativeDay, base: datetime) -> datetime:
+def natural_relative_day_to_absolute_date(
+        relative_day: RelativeDay, base: datetime,
+        clarifications: Iterable[ALL_CLARIFICATIONS_CLASSES] = (),
+) -> datetime:
     rd = relative_day.relative_day
-    day_time = relative_day.day_time
+
+    day_time_clarification = next((c for c in clarifications if isinstance(c, DayTimeClarification)), None)
+
+    if day_time_clarification:
+        day_time = day_time_clarification.day_time
+    else:
+        day_time = relative_day.day_time
 
     if rd == RelativeDayOption.TODAY:
         if day_time:
             return set_day_time(base, day_time)
 
-        raise ClarificationRequired()
+        raise ClarificationRequired(DayTimeClarification(base.time()))
 
     elif rd == RelativeDayOption.TOMORROW:
         if day_time:
             return set_day_time(base, day_time) + timedelta(days=1)
 
-        raise ClarificationRequired()
+        raise ClarificationRequired(DayTimeClarification(base.time()))
 
     elif rd == RelativeDayOption.THE_DAY_AFTER_TOMORROW:
         if day_time:
             return set_day_time(base, day_time) + timedelta(days=2)
 
-        raise ClarificationRequired()
+        raise ClarificationRequired(DayTimeClarification(base.time()))
 
     else:
         raise InvalidRelativeDateException(f"Unknown relative day option: {rd}")
@@ -141,7 +150,7 @@ def natural_relative_day_to_absolute_date(relative_day: RelativeDay, base: datet
 def natural_relative_interval_to_absolute_date(
         relative_interval: RelativeInterval,
         base: datetime,
-        list_clarifications: List[ALL_CLARIFICATIONS_CLASSES] = None,
+        clarifications: Iterable[ALL_CLARIFICATIONS_CLASSES] = (),
 ) -> datetime:
     unit = relative_interval.unit
 
@@ -164,7 +173,7 @@ def natural_relative_interval_to_absolute_date(
 def get_absolute_date(
         moment: Moment,
         base: datetime = None,
-        list_clarifications: List[ALL_CLARIFICATIONS_CLASSES] = None,
+        clarifications: Iterable[ALL_CLARIFICATIONS_CLASSES] = (),
 ) -> datetime:
     if base is None:
         base = datetime.now()
@@ -172,9 +181,17 @@ def get_absolute_date(
     distance = moment.effective_date
 
     if isinstance(distance, RelativeInterval):
-        return natural_relative_interval_to_absolute_date(relative_interval=distance, base=base)
+        return natural_relative_interval_to_absolute_date(
+            relative_interval=distance,
+            base=base,
+            clarifications=clarifications,
+        )
     if isinstance(distance, RelativeDay):
-        return natural_relative_day_to_absolute_date(relative_day=distance, base=base)
+        return natural_relative_day_to_absolute_date(
+            relative_day=distance,
+            base=base,
+            clarifications=clarifications,
+        )
     if isinstance(distance, DayOfWeek):
         raise InvalidRelativeDateException(f"This type of relative date is not supported: {type(distance).__name__}")
 
