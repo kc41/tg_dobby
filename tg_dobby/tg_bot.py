@@ -1,16 +1,29 @@
-from typing import Optional
+from typing import Optional, Iterable, List
 
 from datetime import datetime, timedelta
 import logging
 import json
 
 import yaml
-from aiotg import Chat
+from aiotg import Chat, asyncio
 
 from tg_dobby.date_utils import add_months
 from tg_dobby.grammar import extract_first_natural_date
-from tg_dobby.tg_bot_base import BotCommand, TgBotBase, InlineKeyboardMarkupData, InlineKeyboardButtonData, \
-    CallbackQueryData, MessageData
+from tg_dobby.grammar.natural_dates import Moment, RULE_DAY_TIME, DayTime
+from tg_dobby.grammar.natural_dates_post_processing import (
+    get_absolute_date,
+    ClarificationRequired,
+    InvalidRelativeDateException,
+    ALL_CLARIFICATIONS_CLASSES, DayTimeClarification)
+from tg_dobby.grammar.tokenizer import tokenize_phrase, PhraseToken, ReminderPreamble
+from tg_dobby.tg_bot_base import (
+    BotCommand,
+    TgBotBase,
+    InlineKeyboardMarkupData,
+    InlineKeyboardButtonData,
+    CallbackQueryData,
+    MessageData,
+)
 
 log = logging.getLogger(__name__)
 
@@ -135,6 +148,85 @@ class RemindCommand(BotCommand):
             await self.send_message(f"Отменено пользователем")
 
 
+class NaturalReminderCommand(BotCommand):
+    REMINDER_PATTERNS = (
+        (ReminderPreamble, Moment, type(None),),
+        (ReminderPreamble, type(None), Moment,),
+        (type(None), Moment,),
+        (Moment, type(None)),
+    )
+
+    def __init__(self, loop: asyncio.AbstractEventLoop, initial_chat_obj: Chat, initial_tokens: Iterable[PhraseToken]):
+        super().__init__(loop, initial_chat_obj)
+
+        token_type_map = {
+            type(token.fact): token
+            for token in initial_tokens
+        }
+
+        self.reminder_text = token_type_map[type(None)].text  # type: str
+        self.initial_moment = token_type_map[Moment].fact  # type: Moment
+
+    async def ask_day_time_clarification(self) -> DayTimeClarification:
+        await self.send_message("Во сколько?")
+
+        while True:
+            response = await self.next_message()
+
+            tokens = tokenize_phrase(response.text, rules=(RULE_DAY_TIME,))
+
+            if len(tokens) == 1:
+                fact = tokens[0].fact
+                if isinstance(fact, DayTime):
+                    return DayTimeClarification(fact)
+
+            await self.send_message("Во сколько, во сколько?")
+
+    async def get_date(self, moment: Moment) -> datetime:
+        collected_clarification = []  # type: List[ALL_CLARIFICATIONS_CLASSES]
+
+        # Trying to parse date and collect clarifications if required
+        while True:
+            try:
+                return get_absolute_date(moment, clarifications=collected_clarification)
+
+            except ClarificationRequired as e:
+
+                for required_clarification in e.required_clarifications:
+                    if isinstance(required_clarification, DayTimeClarification):
+                        c = await self.ask_day_time_clarification()
+                        collected_clarification.append(c)
+
+                    else:
+                        raise ValueError(f"Unknown clarification type was requested:"
+                                         f" {type(required_clarification).__name__}")
+
+    async def run(self, initial_message: Chat):
+        # noinspection PyBroadException
+        try:
+            dt = await self.get_date(self.initial_moment)
+
+            resp_yml = yaml.dump(dict(
+                what=self.reminder_text,
+                when=dt.strftime('%d %b %Y %H:%M'),
+
+            ), default_flow_style=False, allow_unicode=True)
+
+            await self.send_message(f"```\n"
+                                    f"{resp_yml}"
+                                    f"```")
+
+        except ClarificationRequired as e:
+            await self.send_message(f"Clarification required: {[type(c).__name__ for c in e.required_clarifications]}")
+
+        except InvalidRelativeDateException as e:
+            await self.send_message(f"Invalid date: {e}")
+
+        except Exception as e:
+            log.exception("Exception during date parsing")
+            await self.send_message(f"Unexpected error {type(e).__name__}: {e}")
+
+
 class TgBot(TgBotBase):
     def _dispatch_initial_message(self, chat_obj) -> Optional[BotCommand]:
 
@@ -146,3 +238,11 @@ class TgBot(TgBotBase):
             return RemindCommand(self.app_wrapper.loop, chat_obj)
         elif msg == "/parse_date":
             return ParseDateCommand(self.app_wrapper.loop, chat_obj)
+
+        # Trying to analyze phrase:
+        tokens = tokenize_phrase(msg)
+
+        token_fact_types = tuple(type(token.fact) for token in tokens)
+
+        if token_fact_types in NaturalReminderCommand.REMINDER_PATTERNS:
+            return NaturalReminderCommand(self.app_wrapper.loop, chat_obj, tokens)
