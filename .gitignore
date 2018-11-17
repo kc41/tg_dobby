@@ -1,12 +1,21 @@
-# IntelliJ project files
+### IntelliJ project files
 .idea
+out
+gen
 
-# Python virtualenv
+### Python
+__pycache__/
+
+# Distribution / packaging
+.eggs/
+*.egg-info/
+
+# Environments
 .env
+.pyvenv
 
-# Local files
+# mypy
+.mypy_cache/
+
+### Local files
 _local
-
-# Temporary
-Dockerfile
-docker-compose.yml
